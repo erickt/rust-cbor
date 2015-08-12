@@ -26,11 +26,6 @@ fn round_trip<T>(v: T) -> bool
     true
 }
 
-#[allow(dead_code)]
-fn readone(bytes: &[u8]) -> Cbor {
-    Decoder::from_bytes(bytes).items().next().unwrap().unwrap()
-}
-
 macro_rules! round_trip_num {
     ($name:ident, $ty:ident) => (
         #[test]
