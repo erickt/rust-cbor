@@ -9,7 +9,7 @@ use rand::thread_rng;
 use rustc_serialize::{Decodable, Encodable};
 use quickcheck::{QuickCheck, StdGen, Testable};
 
-use cbor::{Encoder, Decoder, Cbor, CborBytes, CborTagEncode};
+use cbor::{Decoder, CborBytes, CborTagEncode};
 
 fn qc_sized<A: Testable>(f: A, size: u64) {
     QuickCheck::new()
@@ -21,19 +21,9 @@ fn qc_sized<A: Testable>(f: A, size: u64) {
 
 fn round_trip<T>(v: T) -> bool
         where T: Decodable + Encodable + Debug + PartialEq {
-    let backv: T = decode(&encode(&v));
+    let backv: T = cbor::decode(&cbor::encode(&v)).unwrap();
     assert_eq!(backv, v);
     true
-}
-
-fn encode<T: Encodable>(v: T) -> Vec<u8> {
-    let mut enc = Encoder::from_memory();
-    enc.encode(&[v]).unwrap();
-    enc.as_bytes().to_vec()
-}
-
-fn decode<T: Decodable>(bytes: &[u8]) -> T {
-    Decoder::from_bytes(bytes).decode().next().unwrap().unwrap()
 }
 
 #[allow(dead_code)]
@@ -145,7 +135,7 @@ fn roundtrip_struct() {
 fn invalid_map_key() {
     let mut map = HashMap::new();
     map.insert(5, 5);
-    encode(map);
+    cbor::encode(map);
 }
 
 #[test]
@@ -214,15 +204,15 @@ fn rpc_decode() {
         params: CborBytes,
     }
 
-    let send = encode(Message {
+    let send = cbor::encode(Message {
         id: 123,
         method: "foobar".to_owned(),
-        params: CborBytes(encode(("val".to_owned(), true, -5,))),
+        params: CborBytes(cbor::encode(("val".to_owned(), true, -5,))),
     });
-    let msg: Message = decode(&send);
+    let msg: Message = cbor::decode(&send).unwrap();
 
     assert_eq!(msg.method, "foobar");
-    let (val1, val2, val3): (String, bool, i32) = decode(&msg.params.0);
+    let (val1, val2, val3): (String, bool, i32) = cbor::decode(&msg.params.0).unwrap();
     assert_eq!(val1, "val");
     assert_eq!(val2, true);
     assert_eq!(val3, -5);

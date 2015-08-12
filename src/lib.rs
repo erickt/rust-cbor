@@ -862,3 +862,26 @@ mod encoder;
 mod json;
 mod rustc_decoder;
 mod rustc_decoder_direct;
+
+/// Encode a CBOR value into a Vec<u8>.
+pub fn encode<T: Encodable>(v: T) -> Vec<u8> {
+    let mut ser = Encoder::from_memory();
+    ser.encode(&[v]).unwrap();
+    ser.as_bytes().to_vec()
+}
+
+/// Encode a CBOR value into a writer.
+pub fn encode_into<W: io::Write, T: Encodable>(wr: W, v: T) -> CborResult<()> {
+    let mut ser = Encoder::from_writer(wr);
+    ser.encode(&[v])
+}
+
+/// Decode a CBOR value from a `&[u8]`.
+pub fn decode<T: Decodable>(bytes: &[u8]) -> CborResult<T> {
+    Decoder::from_bytes(bytes).decode().next().unwrap()
+}
+
+/// Decode a CBOR value from a reader.
+pub fn decode_from<R: io::Read, T: Decodable>(rdr: R) -> CborResult<T> {
+    Decoder::from_reader(rdr).decode().next().unwrap()
+}
